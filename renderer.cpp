@@ -8,10 +8,10 @@ Renderer::Renderer(const TGAImage& renderTarget) : image(renderTarget)
 
 }
 
-void Renderer::drawLine(const Point& start, const Point& end, TGAColor color)
+void Renderer::drawLine(const Vec2i& start, const Vec2i& end, TGAColor color)
 {
-    int x0 = start.x, y0 = start.y;
-    int x1 = end.x, y1 = end.y;
+    int x0 = start[0], y0 = start[1];
+    int x1 = end[0], y1 = end[1];
 
     bool steep = false;
     if (std::abs(x0 - x1) < std::abs(y0 - y1))
