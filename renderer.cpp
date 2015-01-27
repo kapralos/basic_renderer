@@ -17,17 +17,18 @@ Renderer::Renderer(const TGAImage& renderTarget) : image(renderTarget)
 
 void Renderer::drawLine(const Vec2i& start, const Vec2i& end, TGAColor color)
 {
+    // Bresenham algorithm
     int x0 = start[0], y0 = start[1];
     int x1 = end[0], y1 = end[1];
 
     bool steep = false;
-    if (std::abs(x0 - x1) < std::abs(y0 - y1))
+    if (std::abs(x0 - x1) < std::abs(y0 - y1)) // swap axises if line is steep
     {
         std::swap(x0, y0);
         std::swap(x1, y1);
         steep = true;
     }
-    if (x0 > x1)
+    if (x0 > x1) // draw line from left to right
     {
         std::swap(x0, x1);
         std::swap(y0, y1);
@@ -35,8 +36,8 @@ void Renderer::drawLine(const Vec2i& start, const Vec2i& end, TGAColor color)
 
     int dx = x1 - x0;
     int dy = y1 - y0;
-    float derror = std::abs(dy) * 2.0;
-    float error = 0;
+    int derror = std::abs(dy) * 2.0; // dispose of division and floats by coeff. 2*dx
+    int error = 0;
     int y = y0;
     int inc = y1 > y0 ? 1 : -1;
     for (int x=x0; x<=x1; x++)
@@ -51,7 +52,7 @@ void Renderer::drawLine(const Vec2i& start, const Vec2i& end, TGAColor color)
         }
 
         error += derror;
-        if (error > dx)
+        if (error > dx) // add or subtract if error is more than half a pixel
         {
             y += inc;
             error -= dx * 2.0;
@@ -68,6 +69,7 @@ void Renderer::drawTriangle(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, T
 
 void Renderer::drawTriangleFilled(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, TGAColor color)
 {
+    // Line sweeping
     vector<Vec2i> v = sortVerticesByY(t0, t1, t2);
 
     int x0 = v[0][0], y0 = v[0][1];
@@ -78,18 +80,8 @@ void Renderer::drawTriangleFilled(const Vec2i& t0, const Vec2i& t1, const Vec2i&
     int xA = 0, xB = 0;
     for (int y = y0; y <= y2; y++)
     {
-        if (y <= y1)
-        {
-            a = (y - y0) / (y1 - y0 + 1.0);
-            xA = (1.0 - a) * x0 + a * x1;
-        }
-        else
-        {
-            a = (y - y1) / (y2 - y1 + 1.0);
-            xA = (1.0 - a) * x1 + a * x2;
-        }
-        b = (y - y0) / total;
-        xB = (1.0 - b) * x0 + b * x2;
+        xA = (y <= y1) ? interpolateX(v[0], v[1], y) : interpolateX(v[1], v[2], y);
+        xB = interpolateX(v[0], v[2], y);
 
         Vec2i start = { xA, y };
         Vec2i end = { xB, y };
@@ -101,6 +93,15 @@ void Renderer::save(const char* filename)
 {
     image.flip_vertically();
     image.write_tga_file(filename);
+}
+
+// **************************************
+// Private
+
+inline int Renderer::interpolateX(const Vec2i& t0, const Vec2i& t1, int currentY)
+{
+    float a = (currentY - t0[1]) / (t1[1] - t0[1] + 1.0);
+    return (1.0 - a) * t0[0] + a * t1[0];
 }
 
 inline std::vector<Vec2i> Renderer::sortVerticesByY(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2)
