@@ -252,14 +252,17 @@ typedef mat<4,float> Matrix;
 
 template<typename number_t> vec<3,number_t> cross(vec<3,number_t> lhs, vec<3,number_t> rhs) {
     vec<3,number_t> ret;
-    for (size_t i=3; i--; ) {
-        mat<3,number_t> temp;
-        temp[0]=vec<3,number_t>::fill(0);
-        temp[0][i]=1;
-        temp[1]=lhs;
-        temp[2]=rhs;
-        ret[i]=temp.det();
-    }
+    // for (size_t i=3; i--; ) {
+    //     mat<3,number_t> temp;
+    //     temp[0]=vec<3,number_t>::fill(0);
+    //     temp[0][i]=1;
+    //     temp[1]=lhs;
+    //     temp[2]=rhs;
+    //     ret[i]=temp.det();
+    // }
+    ret[0] = lhs[1] * rhs[2] - lhs[2] * rhs[1];
+    ret[1] = lhs[2] * rhs[0] - lhs[0] * rhs[2];
+    ret[2] = lhs[0] * rhs[1] - lhs[1] * rhs[0];
     return ret;
 }
 

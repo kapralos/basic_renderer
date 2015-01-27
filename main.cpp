@@ -34,11 +34,61 @@ int main(int argc, char const *argv[])
     //         renderer.drawLine(start, end, white);
     //     }
     // }
-    Vec2i t0 = { 200, 200 };
-    Vec2i t1 = { 100, 400 };
-    Vec2i t2 = { 150, 600 };
+    {
+    Vec2i t0 = { 30, 210 };
+    Vec2i t1 = { 150, 480 };
+    Vec2i t2 = { 210, 240 };
     renderer.drawTriangleFilled(t0, t1, t2, white);
     renderer.drawTriangle(t0, t1, t2, red);
+}
+
+    {
+        Vec2i t0 = { 480, 150 };
+    Vec2i t1 = { 450, 3 };
+    Vec2i t2 = { 210, 540 };
+    renderer.drawTriangleFilled(t0, t1, t2, white);
+    renderer.drawTriangle(t0, t1, t2, red);
+    }
+
+    {
+   Vec2i t0 = { 540, 450 };
+    Vec2i t1 = { 360, 480 };
+    Vec2i t2 = { 390, 540 };
+    renderer.drawTriangleFilled(t0, t1, t2, white);
+    renderer.drawTriangle(t0, t1, t2, red);
+    }
+
+    {
+   Vec2i t0 = { 540, 450 };
+    Vec2i t1 = { 360, 480 };
+    Vec2i t2 = { 390, 540 };
+    renderer.drawTriangleFilled(t0, t1, t2, white);
+    renderer.drawTriangle(t0, t1, t2, red);
+    }
+
+    {
+   Vec2i t0 = { 640, 450 };
+    Vec2i t1 = { 740, 450 };
+    Vec2i t2 = { 700, 540 };
+    renderer.drawTriangleFilled(t0, t1, t2, white);
+    renderer.drawTriangle(t0, t1, t2, red);
+    }
+
+     {
+   Vec2i t0 = { 640, 20 };
+    Vec2i t1 = { 640, 200 };
+    Vec2i t2 = { 740, 120 };
+    renderer.drawTriangleFilled(t0, t1, t2, white);
+    renderer.drawTriangle(t0, t1, t2, red);
+    }
+
+     {
+   Vec2i t0 = { 400, 750 };
+    Vec2i t1 = { 600, 750 };
+    Vec2i t2 = { 500, 600 };
+    renderer.drawTriangleFilled(t0, t1, t2, white);
+    renderer.drawTriangle(t0, t1, t2, red);
+    }
 
     renderer.save("output.tga");
 

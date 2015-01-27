@@ -15,7 +15,6 @@ public:
     void save(const char* filename);
 
 private:
-    Vec2i drawSegment(const Vec2i& startA, const Vec2i& endA, const Vec2i& startB, const Vec2i& endB, TGAColor color);
     std::vector<Vec2i> sortVerticesByY(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2);
     TGAImage image;
 };
