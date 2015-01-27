@@ -18,76 +18,26 @@ int main(int argc, char const *argv[])
     const int height = 800;
     Renderer renderer(TGAImage(width, height, TGAImage::RGB));
     
-    // Vec2i start, end;
-    // for (int i = 0; i < numFaces; i++)
-    // {
-    //     vector<int> vertexFace = model.face(i);
-    //     for (int j = 0; j < 3; j++)
-    //     {
-    //         Vec3f v0 = model.vert(vertexFace[j]);
-    //         Vec3f v1 = model.vert(vertexFace[(j + 1) % 3]);
-    //         start[0] = (v0[0] + 1.0) * width / 2.0;
-    //         start[1] = (v0[1] + 1.0) * height / 2.0;
-    //         end[0] = (v1[0] + 1.0) * width / 2.0;
-    //         end[1] = (v1[1] + 1.0) * height / 2.0;
-
-    //         renderer.drawLine(start, end, white);
-    //     }
-    // }
+    Vec3f light = { 0, 0, -1 };
+    for (int i = 0; i < numFaces; i++)
     {
-    Vec2i t0 = { 30, 210 };
-    Vec2i t1 = { 150, 480 };
-    Vec2i t2 = { 210, 240 };
-    renderer.drawTriangleFilled(t0, t1, t2, white);
-    renderer.drawTriangle(t0, t1, t2, red);
-}
+        vector<int> face = model.face(i);
+        Vec2i screen[3];
+        Vec3f world[3];
+        for (int j = 0; j < 3; j++)
+        {
+            world[j] = model.vert(face[j]);
+            Vec2i s = { (world[j][0] + 1) * width / 2, (world[j][1] + 1) * height / 2 };
+            screen[j] = s;
+        }
 
-    {
-        Vec2i t0 = { 480, 150 };
-    Vec2i t1 = { 450, 3 };
-    Vec2i t2 = { 210, 540 };
-    renderer.drawTriangleFilled(t0, t1, t2, white);
-    renderer.drawTriangle(t0, t1, t2, red);
-    }
-
-    {
-   Vec2i t0 = { 540, 450 };
-    Vec2i t1 = { 360, 480 };
-    Vec2i t2 = { 390, 540 };
-    renderer.drawTriangleFilled(t0, t1, t2, white);
-    renderer.drawTriangle(t0, t1, t2, red);
-    }
-
-    {
-   Vec2i t0 = { 540, 450 };
-    Vec2i t1 = { 360, 480 };
-    Vec2i t2 = { 390, 540 };
-    renderer.drawTriangleFilled(t0, t1, t2, white);
-    renderer.drawTriangle(t0, t1, t2, red);
-    }
-
-    {
-   Vec2i t0 = { 640, 450 };
-    Vec2i t1 = { 740, 450 };
-    Vec2i t2 = { 700, 540 };
-    renderer.drawTriangleFilled(t0, t1, t2, white);
-    renderer.drawTriangle(t0, t1, t2, red);
-    }
-
-     {
-   Vec2i t0 = { 640, 20 };
-    Vec2i t1 = { 640, 200 };
-    Vec2i t2 = { 740, 120 };
-    renderer.drawTriangleFilled(t0, t1, t2, white);
-    renderer.drawTriangle(t0, t1, t2, red);
-    }
-
-     {
-   Vec2i t0 = { 400, 750 };
-    Vec2i t1 = { 600, 750 };
-    Vec2i t2 = { 500, 600 };
-    renderer.drawTriangleFilled(t0, t1, t2, white);
-    renderer.drawTriangle(t0, t1, t2, red);
+        Vec3f n = cross(world[2] - world[0], world[1] - world[0]);
+        Vec3f norm = n.normalize();
+        float intensity = norm * light;
+        if (intensity > 0)
+        {
+            renderer.drawTriangleFilled(screen[0], screen[1], screen[2], TGAColor(255 * intensity, 255 * intensity, 255 * intensity, 255));
+        }
     }
 
     renderer.save("output.tga");
