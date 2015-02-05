@@ -5,10 +5,25 @@
 
 using namespace std;
 
-bool compareByY(const Vec2i& t0, const Vec2i& t1)
+// ********************
+// Helpers
+
+inline float barycentricPart(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2)
 {
-    return t0[1] < t1[1];
+    return (t0[1] - t2[1]) * (t1[0] - t2[0]) - (t0[0] - t2[0]) * (t1[1] - t2[1]);
 }
+
+Vec3f barycentric(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, const Vec2i& p)
+{
+    float x = barycentricPart(p, t1, t2) / barycentricPart(t0, t1, t2);
+    float y = barycentricPart(p, t2, t0) / barycentricPart(t1, t2, t0);
+    float z = barycentricPart(p, t1, t0) / barycentricPart(t2, t1, t0);
+    return { x, y, z };
+}
+
+
+// ********************
+// Renderer
 
 Renderer::Renderer(const TGAImage& renderTarget) : image(renderTarget)
 {
@@ -69,23 +84,21 @@ void Renderer::drawTriangle(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, T
 
 void Renderer::drawTriangleFilled(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, TGAColor color)
 {
-    // Line sweeping
-    vector<Vec2i> v = sortVerticesByY(t0, t1, t2);
+    int minX = min( t0[0], min(t1[0], t2[0]) );
+    int maxX = max( t0[0], max(t1[0], t2[0]) );
+    int minY = min( t0[1], min(t1[1], t2[1]) );
+    int maxY = max( t0[1], max(t1[1], t2[1]) );
 
-    int x0 = v[0][0], y0 = v[0][1];
-    int x1 = v[1][0], y1 = v[1][1];
-    int x2 = v[2][0], y2 = v[2][1];
-    float a = 0, b = 0;
-    float total = y2 - y0;
-    int xA = 0, xB = 0;
-    for (int y = y0; y <= y2; y++)
+    for (int x = minX; x <= maxX; x++)
     {
-        xA = (y <= y1) ? interpolateX(v[0], v[1], y) : interpolateX(v[1], v[2], y);
-        xB = interpolateX(v[0], v[2], y);
-
-        Vec2i start = { xA, y };
-        Vec2i end = { xB, y };
-        drawLine(start, end, color);
+        for (int y = minY; y <= maxY; y++)
+        {
+            Vec3f bary = barycentric(t0, t1, t2, { x, y });
+            if (!(bary[0] < 0 || bary[1] < 0 || bary[2] < 0))
+            {
+                image.set(x, y, color);
+            }
+        }
     }
 }
 
@@ -93,23 +106,4 @@ void Renderer::save(const char* filename)
 {
     image.flip_vertically();
     image.write_tga_file(filename);
-}
-
-// **************************************
-// Private
-
-inline int Renderer::interpolateX(const Vec2i& t0, const Vec2i& t1, int currentY)
-{
-    float a = (currentY - t0[1]) / (t1[1] - t0[1] + 1.0);
-    return (1.0 - a) * t0[0] + a * t1[0];
-}
-
-inline std::vector<Vec2i> Renderer::sortVerticesByY(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2)
-{
-    vector<Vec2i> v;
-    v.push_back(t0);
-    v.push_back(t1);
-    v.push_back(t2);
-    sort(v.begin(), v.end(), compareByY);
-    return v;
 }

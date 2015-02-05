@@ -15,8 +15,6 @@ public:
     void save(const char* filename);
 
 private:
-    int interpolateX(const Vec2i& t0, const Vec2i& t1, int currentY);
-    std::vector<Vec2i> sortVerticesByY(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2);
     TGAImage image;
 };
 

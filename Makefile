@@ -1,7 +1,7 @@
 SYSCONF_LINK = g++
-CPPFLAGS     = -Wall -Wextra -Weffc++ -pedantic -std=c++98
-LDFLAGS      = -O3
-LIBS         = -lm
+CPPFLAGS     = -Wall -Wno-c++11-narrowing -O3 -std=c++11
+LDFLAGS      = -lm
+LIBS         =
 
 DESTDIR = ./
 TARGET  = main
@@ -14,7 +14,7 @@ $(DESTDIR)$(TARGET): $(OBJECTS)
 	$(SYSCONF_LINK) -Wall $(LDFLAGS) -o $(DESTDIR)$(TARGET) $(OBJECTS) $(LIBS)
 
 $(OBJECTS): %.o: %.cpp
-	$(SYSCONF_LINK) -Wall $(CPPFLAGS) -c $(CFLAGS) $< -o $@
+	$(SYSCONF_LINK) $(CPPFLAGS) -c $(CFLAGS) $< -o $@
 
 clean:
 	-rm -f $(OBJECTS)
