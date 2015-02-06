@@ -25,79 +25,37 @@ Vec3f barycentric(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2, const Vec3i
 // ********************
 // Renderer
 
-Renderer::Renderer(const TGAImage& renderTarget) : image(renderTarget)
+Renderer::Renderer(const TGAImage& renderTarget, const Model& _model) : image(renderTarget), model(_model)
 {
     zbuffer = TGAImage(image.get_width(), image.get_height(), TGAImage::GRAYSCALE);
 }
 
-void Renderer::drawLine(const Vec2i& start, const Vec2i& end, TGAColor color)
+void Renderer::render(const Vec3f& light, int depth)
 {
-    // Bresenham algorithm
-    int x0 = start[0], y0 = start[1];
-    int x1 = end[0], y1 = end[1];
+    int numFaces = model.nfaces();
+    int width = image.get_width();
+    int height = image.get_height();
 
-    bool steep = false;
-    if (std::abs(x0 - x1) < std::abs(y0 - y1)) // swap axises if line is steep
+    for (int i = 0; i < numFaces; i++)
     {
-        std::swap(x0, y0);
-        std::swap(x1, y1);
-        steep = true;
-    }
-    if (x0 > x1) // draw line from left to right
-    {
-        std::swap(x0, x1);
-        std::swap(y0, y1);
-    }
-
-    int dx = x1 - x0;
-    int dy = y1 - y0;
-    int derror = std::abs(dy) * 2.0; // dispose of division and floats by coeff. 2*dx
-    int error = 0;
-    int y = y0;
-    int inc = y1 > y0 ? 1 : -1;
-    for (int x=x0; x<=x1; x++)
-    {
-        if (steep)
+        vector<int> face = model.face(i);
+        Vec3i screen[3];
+        Vec3f world[3];
+        Vec2i text[3];
+        for (int j = 0; j < 3; j++)
         {
-            image.set(y, x, color);
-        }
-        else
-        {
-            image.set(x, y, color);
+            world[j] = model.vert(face[j]);
+            Vec3i s = { (world[j][0] + 1) * width / 2, (world[j][1] + 1) * height / 2, (world[j][2] + 1) * depth / 2 };
+            screen[j] = s;
+            text[j] = model.uv(i, j);
         }
 
-        error += derror;
-        if (error > dx) // add or subtract if error is more than half a pixel
+        Vec3f n = cross(world[2] - world[0], world[1] - world[0]);
+        Vec3f norm = n.normalize();
+        float intensity = norm * light;
+        if (intensity > 0)
         {
-            y += inc;
-            error -= dx * 2.0;
-        }
-    }
-}
-
-void Renderer::drawTriangle(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, TGAColor color)
-{
-    drawLine(t0, t1, color);
-    drawLine(t1, t2, color);
-    drawLine(t2, t0, color);
-}
-
-void Renderer::drawTriangleFilled(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2, TGAColor color)
-{
-    int minX = min( t0[0], min(t1[0], t2[0]) );
-    int maxX = max( t0[0], max(t1[0], t2[0]) );
-    int minY = min( t0[1], min(t1[1], t2[1]) );
-    int maxY = max( t0[1], max(t1[1], t2[1]) );
-
-    for (int x = minX; x <= maxX; x++)
-    {
-        for (int y = minY; y <= maxY; y++)
-        {
-            Vec3f bary = barycentric(t0, t1, t2, { x, y, 0 });
-            unsigned char zb = max( 0, min( 255, int(bary[0] * t0[2] + bary[1] * t1[2] + bary[2] * t2[2]) ) );
-            if (bary[0] < 0 || bary[1] < 0 || bary[2] < 0 || zbuffer.get(x, y)[0] > zb) continue;
-            image.set(x, y, color);
-            zbuffer.set(x, y, zb);
+            drawTriangleFilled(screen[0], screen[1], screen[2], text[0], text[1], text[2], intensity);
         }
     }
 }
@@ -106,4 +64,35 @@ void Renderer::save(const char* filename)
 {
     image.flip_vertically();
     image.write_tga_file(filename);
+
+    zbuffer.flip_vertically();
+    zbuffer.write_tga_file("zbuffer.tga");
+}
+
+// ********************
+// Private
+
+void Renderer::drawTriangleFilled(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2, const Vec2i& uv0, const Vec2i& uv1, const Vec2i& uv2, float intensity)
+{
+    int minX = min( t0[0], min(t1[0], t2[0]) );
+    int maxX = max( t0[0], max(t1[0], t2[0]) );
+    int minY = min( t0[1], min(t1[1], t2[1]) );
+    int maxY = max( t0[1], max(t1[1], t2[1]) );
+    int u = 0, v = 0;
+
+    for (int x = minX; x <= maxX; x++)
+    {
+        for (int y = minY; y <= maxY; y++)
+        {
+            Vec3f bary = barycentric(t0, t1, t2, { x, y, 0 });
+            unsigned char zb = max( 0, min( 255, int(bary[0] * t0[2] + bary[1] * t1[2] + bary[2] * t2[2]) ) );
+            if (bary[0] < 0 || bary[1] < 0 || bary[2] < 0 || zbuffer.get(x, y)[0] > zb) continue;
+
+            u = bary[0] * uv0[0] + bary[1] * uv1[0] + bary[2] * uv2[0];
+            v = bary[0] * uv0[1] + bary[1] * uv1[1] + bary[2] * uv2[1];
+            TGAColor color = model.diffuse({ u, v });
+            image.set(x, y, TGAColor(color[2] * intensity, color[1] * intensity, color[0] * intensity, 255));
+            zbuffer.set(x, y, zb);
+        }
+    }
 }
