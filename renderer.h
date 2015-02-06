@@ -11,11 +11,12 @@ public:
     Renderer(const TGAImage& renderTarget);
     void drawLine(const Vec2i& start, const Vec2i& end, TGAColor color);
     void drawTriangle(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, TGAColor color);
-    void drawTriangleFilled(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, TGAColor color);
+    void drawTriangleFilled(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2, TGAColor color);
     void save(const char* filename);
 
 private:
     TGAImage image;
+    TGAImage zbuffer;
 };
 
 #endif

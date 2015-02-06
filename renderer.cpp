@@ -8,12 +8,12 @@ using namespace std;
 // ********************
 // Helpers
 
-inline float barycentricPart(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2)
+inline float barycentricPart(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2)
 {
     return (t0[1] - t2[1]) * (t1[0] - t2[0]) - (t0[0] - t2[0]) * (t1[1] - t2[1]);
 }
 
-Vec3f barycentric(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, const Vec2i& p)
+Vec3f barycentric(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2, const Vec3i& p)
 {
     float x = barycentricPart(p, t1, t2) / barycentricPart(t0, t1, t2);
     float y = barycentricPart(p, t2, t0) / barycentricPart(t1, t2, t0);
@@ -27,7 +27,7 @@ Vec3f barycentric(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, const Vec2i
 
 Renderer::Renderer(const TGAImage& renderTarget) : image(renderTarget)
 {
-
+    zbuffer = TGAImage(image.get_width(), image.get_height(), TGAImage::GRAYSCALE);
 }
 
 void Renderer::drawLine(const Vec2i& start, const Vec2i& end, TGAColor color)
@@ -82,7 +82,7 @@ void Renderer::drawTriangle(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, T
     drawLine(t2, t0, color);
 }
 
-void Renderer::drawTriangleFilled(const Vec2i& t0, const Vec2i& t1, const Vec2i& t2, TGAColor color)
+void Renderer::drawTriangleFilled(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2, TGAColor color)
 {
     int minX = min( t0[0], min(t1[0], t2[0]) );
     int maxX = max( t0[0], max(t1[0], t2[0]) );
@@ -93,11 +93,11 @@ void Renderer::drawTriangleFilled(const Vec2i& t0, const Vec2i& t1, const Vec2i&
     {
         for (int y = minY; y <= maxY; y++)
         {
-            Vec3f bary = barycentric(t0, t1, t2, { x, y });
-            if (!(bary[0] < 0 || bary[1] < 0 || bary[2] < 0))
-            {
-                image.set(x, y, color);
-            }
+            Vec3f bary = barycentric(t0, t1, t2, { x, y, 0 });
+            unsigned char zb = max( 0, min( 255, int(bary[0] * t0[2] + bary[1] * t1[2] + bary[2] * t2[2]) ) );
+            if (bary[0] < 0 || bary[1] < 0 || bary[2] < 0 || zbuffer.get(x, y)[0] > zb) continue;
+            image.set(x, y, color);
+            zbuffer.set(x, y, zb);
         }
     }
 }

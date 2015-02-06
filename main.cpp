@@ -16,18 +16,19 @@ int main(int argc, char const *argv[])
 
     const int width = 800;
     const int height = 800;
+    const int depth = 250;
     Renderer renderer(TGAImage(width, height, TGAImage::RGB));
     
     Vec3f light = { 0, 0, -1 };
     for (int i = 0; i < numFaces; i++)
     {
         vector<int> face = model.face(i);
-        Vec2i screen[3];
+        Vec3i screen[3];
         Vec3f world[3];
         for (int j = 0; j < 3; j++)
         {
             world[j] = model.vert(face[j]);
-            Vec2i s = { (world[j][0] + 1) * width / 2, (world[j][1] + 1) * height / 2 };
+            Vec3i s = { (world[j][0] + 1) * width / 2, (world[j][1] + 1) * height / 2, (world[j][2] + 1) * depth / 2 };
             screen[j] = s;
         }
 
