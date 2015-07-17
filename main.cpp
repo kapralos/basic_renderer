@@ -1,11 +1,13 @@
 #include "tgaimage.h"
 #include "renderer.h"
 #include "model.h"
+#include <memory>
+#include "ImageTarget.h"
 
 using namespace std;
 
-const TGAColor red = TGAColor(255, 0, 0, 255);
-const TGAColor white = TGAColor(255, 255, 255, 255);
+const Color red = Color(255, 0, 0, 255);
+const Color white = Color(255, 255, 255, 255);
 const char* defaultModelFile = "obj/african_head.obj";
 
 int main(int argc, char const *argv[])
@@ -18,9 +20,10 @@ int main(int argc, char const *argv[])
     const int depth = 250;
     Vec3f light = { 0, 0, -1 };
 
-    Renderer renderer(TGAImage(width, height, TGAImage::RGB), model);
-    renderer.render(light, depth);
-    renderer.save("output.tga");
+    shared_ptr<ImageTarget> target(new ImageTarget(width, height, "output.tga"));
+
+    Renderer renderer(static_pointer_cast<RenderTarget>(target), model);
+    renderer.render(light, depth, 2.);
 
     return 0;
 }

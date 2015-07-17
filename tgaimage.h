@@ -2,6 +2,7 @@
 #define __IMAGE_H__
 
 #include <fstream>
+#include "Color.h"
 
 #pragma pack(push,1)
 struct TGA_Header {
@@ -20,47 +21,6 @@ struct TGA_Header {
 };
 #pragma pack(pop)
 
-
-
-struct TGAColor {
-    unsigned char bgra[4];
-    unsigned char bytespp;
-
-    TGAColor() : bgra(), bytespp(1) {
-        for (int i=0; i<4; i++) bgra[i] = 0;
-    }
-
-    TGAColor(unsigned char R, unsigned char G, unsigned char B, unsigned char A=255) : bgra(), bytespp(4) {
-        bgra[0] = B;
-        bgra[1] = G;
-        bgra[2] = R;
-        bgra[3] = A;
-    }
-
-    TGAColor(unsigned char v) : bgra(), bytespp(1) {
-        for (int i=0; i<4; i++) bgra[i] = 0;
-        bgra[0] = v;
-    }
-
-
-    TGAColor(const unsigned char *p, unsigned char bpp) : bgra(), bytespp(bpp) {
-        for (int i=0; i<(int)bpp; i++) {
-            bgra[i] = p[i];
-        }
-        for (int i=bpp; i<4; i++) {
-            bgra[i] = 0;
-        }
-    }
-
-    unsigned char& operator[](const int i) { return bgra[i]; }
-
-    TGAColor operator *(float intensity) const {
-        TGAColor res = *this;
-        intensity = (intensity>1.f?1.f:(intensity<0.f?0.f:intensity));
-        for (int i=0; i<4; i++) res.bgra[i] = bgra[i]*intensity;
-        return res;
-    }
-};
 
 
 class TGAImage {
@@ -85,9 +45,9 @@ public:
     bool flip_horizontally();
     bool flip_vertically();
     bool scale(int w, int h);
-    TGAColor get(int x, int y);
-    bool set(int x, int y, TGAColor &c);
-    bool set(int x, int y, const TGAColor &c);
+    Color get(int x, int y);
+    bool set(int x, int y, Color &c);
+    bool set(int x, int y, const Color &c);
     ~TGAImage();
     TGAImage & operator =(const TGAImage &img);
     int get_width();

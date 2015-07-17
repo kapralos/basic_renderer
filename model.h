@@ -5,6 +5,7 @@
 #include <string>
 #include "geometry.h"
 #include "tgaimage.h"
+#include "Color.h"
 
 class Model {
 private:
@@ -25,7 +26,7 @@ public:
     Vec3f vert(int i);
     Vec3f vert(int iface, int nthvert);
     Vec2i uv(int iface, int nthvert);
-    TGAColor diffuse(Vec2i uv);
+    Color diffuse(Vec2i uv);
     std::vector<int> face(int idx);
 };
 

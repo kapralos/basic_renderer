@@ -21,20 +21,32 @@ Vec3f barycentric(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2, const Vec3i
     return { x, y, z };
 }
 
+Vec3f perspective(const Vec3f& vertex, float zCamera)
+{
+    Matrix mat;
+    mat[0] = { 1., 0., 0., 0. };
+    mat[1] = { 0., 1., 0., 0. };
+    mat[2] = { 0., 0., 1., 0. };
+    mat[3] = { 0., 0., -1/zCamera, 1. };
+    Vec4f w = { vertex[0], vertex[1], vertex[2], 1.0 };
+    w = mat * w;
+    return { w[0]/(1 - w[2]/zCamera), w[1]/(1 - w[2]/zCamera), w[2]/(1 - w[2]/zCamera) };
+}
+
 
 // ********************
 // Renderer
 
-Renderer::Renderer(const TGAImage& renderTarget, const Model& _model) : image(renderTarget), model(_model)
+Renderer::Renderer(std::shared_ptr<RenderTarget> _renderTarget, const Model& _model) : renderTarget(move(_renderTarget)), model(_model)
 {
-    zbuffer = TGAImage(image.get_width(), image.get_height(), TGAImage::GRAYSCALE);
+    zbuffer = ZBuffer(renderTarget->getWidth(), renderTarget->getHeight(), "zbuffer.tga");
 }
 
-void Renderer::render(const Vec3f& light, int depth)
+void Renderer::render(const Vec3f& light, int depth, float zCamera)
 {
     int numFaces = model.nfaces();
-    int width = image.get_width();
-    int height = image.get_height();
+    int width = renderTarget->getWidth();
+    int height = renderTarget->getHeight();
 
     for (int i = 0; i < numFaces; i++)
     {
@@ -45,10 +57,14 @@ void Renderer::render(const Vec3f& light, int depth)
         for (int j = 0; j < 3; j++)
         {
             world[j] = model.vert(face[j]);
+            world[j] = perspective(world[j], zCamera);
+
             Vec3i s = { (world[j][0] + 1) * width / 2, (world[j][1] + 1) * height / 2, (world[j][2] + 1) * depth / 2 };
             screen[j] = s;
             text[j] = model.uv(i, j);
         }
+
+
 
         Vec3f n = cross(world[2] - world[0], world[1] - world[0]);
         Vec3f norm = n.normalize();
@@ -58,15 +74,6 @@ void Renderer::render(const Vec3f& light, int depth)
             drawTriangleFilled(screen[0], screen[1], screen[2], text[0], text[1], text[2], intensity);
         }
     }
-}
-
-void Renderer::save(const char* filename)
-{
-    image.flip_vertically();
-    image.write_tga_file(filename);
-
-    zbuffer.flip_vertically();
-    zbuffer.write_tga_file("zbuffer.tga");
 }
 
 // ********************
@@ -90,8 +97,8 @@ void Renderer::drawTriangleFilled(const Vec3i& t0, const Vec3i& t1, const Vec3i&
 
             u = bary[0] * uv0[0] + bary[1] * uv1[0] + bary[2] * uv2[0];
             v = bary[0] * uv0[1] + bary[1] * uv1[1] + bary[2] * uv2[1];
-            TGAColor color = model.diffuse({ u, v });
-            image.set(x, y, TGAColor(color[2] * intensity, color[1] * intensity, color[0] * intensity, 255));
+            Color color = model.diffuse({ u, v });
+            renderTarget->set(x, y, Color(color[2] * intensity, color[1] * intensity, color[0] * intensity, 255));
             zbuffer.set(x, y, zb);
         }
     }

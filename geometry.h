@@ -248,6 +248,7 @@ typedef vec<2,float> Vec2f;
 typedef vec<2,int>   Vec2i;
 typedef vec<3,float> Vec3f;
 typedef vec<3,int>   Vec3i;
+typedef vec<4,float> Vec4f;
 typedef mat<4,float> Matrix;
 
 template<typename number_t> vec<3,number_t> cross(vec<3,number_t> lhs, vec<3,number_t> rhs) {
