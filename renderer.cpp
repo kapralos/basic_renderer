@@ -37,12 +37,12 @@ Vec3f perspective(const Vec3f& vertex, float zCamera)
 // ********************
 // Renderer
 
-Renderer::Renderer(std::shared_ptr<RenderTarget> _renderTarget, const Model& _model) : renderTarget(move(_renderTarget)), model(_model)
+Renderer::Renderer(std::shared_ptr<RenderTarget> _renderTarget) : renderTarget(move(_renderTarget))
 {
     zbuffer = ZBuffer(renderTarget->getWidth(), renderTarget->getHeight(), "zbuffer.tga");
 }
 
-void Renderer::render(const Vec3f& light, int depth, float zCamera)
+void Renderer::render(const Vec3f& light, int depth, float zCamera, Model& model)
 {
     int numFaces = model.nfaces();
     int width = renderTarget->getWidth();
@@ -71,7 +71,7 @@ void Renderer::render(const Vec3f& light, int depth, float zCamera)
         float intensity = norm * light;
         if (intensity > 0)
         {
-            drawTriangleFilled(screen[0], screen[1], screen[2], text[0], text[1], text[2], intensity);
+            drawTriangleFilled(screen[0], screen[1], screen[2], text[0], text[1], text[2], intensity, model);
         }
     }
 }
@@ -79,7 +79,9 @@ void Renderer::render(const Vec3f& light, int depth, float zCamera)
 // ********************
 // Private
 
-void Renderer::drawTriangleFilled(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2, const Vec2i& uv0, const Vec2i& uv1, const Vec2i& uv2, float intensity)
+void Renderer::drawTriangleFilled(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2, 
+    const Vec2i& uv0, const Vec2i& uv1, const Vec2i& uv2, 
+    float intensity, Model& model)
 {
     int minX = min( t0[0], min(t1[0], t2[0]) );
     int maxX = max( t0[0], max(t1[0], t2[0]) );
