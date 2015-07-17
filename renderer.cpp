@@ -5,6 +5,8 @@
 
 using namespace std;
 
+static const float depth = 255.f;
+
 // ********************
 // Helpers
 
@@ -21,18 +23,6 @@ Vec3f barycentric(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2, const Vec3i
     return { x, y, z };
 }
 
-Vec3f perspective(const Vec3f& vertex, float zCamera)
-{
-    Matrix mat;
-    mat[0] = { 1., 0., 0., 0. };
-    mat[1] = { 0., 1., 0., 0. };
-    mat[2] = { 0., 0., 1., 0. };
-    mat[3] = { 0., 0., -1/zCamera, 1. };
-    Vec4f w = { vertex[0], vertex[1], vertex[2], 1.0 };
-    w = mat * w;
-    return { w[0]/(1 - w[2]/zCamera), w[1]/(1 - w[2]/zCamera), w[2]/(1 - w[2]/zCamera) };
-}
-
 
 // ********************
 // Renderer
@@ -42,38 +32,77 @@ Renderer::Renderer(std::shared_ptr<RenderTarget> _renderTarget) : renderTarget(m
     zbuffer = ZBuffer(renderTarget->getWidth(), renderTarget->getHeight(), "zbuffer.tga");
 }
 
-void Renderer::render(const Vec3f& light, int depth, float zCamera, Model& model)
+void Renderer::render(const Vec3f& light, Model& model)
 {
+    std::cerr << ModelView << std::endl;
+        std::cerr << Projection << std::endl;
+        std::cerr << Viewport << std::endl;
+        Matrix z = (Viewport*Projection*ModelView);
+        std::cerr << z << std::endl;
     int numFaces = model.nfaces();
-    int width = renderTarget->getWidth();
-    int height = renderTarget->getHeight();
+    Vec3f light_proj = proj<3>(Projection * ModelView * embed<4>(light, 0.f)).normalize();
 
-    for (int i = 0; i < numFaces; i++)
+    for (int i = numFaces-1; i >= 0; i--)
     {
         vector<int> face = model.face(i);
-        Vec3i screen[3];
         Vec3f world[3];
+        Vec3i screen[3];
         Vec2i text[3];
         for (int j = 0; j < 3; j++)
         {
-            world[j] = model.vert(face[j]);
-            world[j] = perspective(world[j], zCamera);
-
-            Vec3i s = { (world[j][0] + 1) * width / 2, (world[j][1] + 1) * height / 2, (world[j][2] + 1) * depth / 2 };
-            screen[j] = s;
+            Vec3f w = model.vert(face[j]);
+            world[j] = proj<3>(Projection * ModelView * embed<4>(w));
+            Vec3f s = proj<3>(Viewport * Projection * ModelView * embed<4>(w));
+            screen[j] = { s[0], s[1], s[2] };
             text[j] = model.uv(i, j);
         }
 
 
 
-        Vec3f n = cross(world[2] - world[0], world[1] - world[0]);
+        Vec3f n = cross(world[1] - world[0], world[2] - world[0]);
         Vec3f norm = n.normalize();
-        float intensity = norm * light;
+        float intensity = norm * light_proj;
         if (intensity > 0)
         {
             drawTriangleFilled(screen[0], screen[1], screen[2], text[0], text[1], text[2], intensity, model);
         }
     }
+}
+
+void Renderer::lookat(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
+{
+    Vec3f z = (eye - center).normalize();
+    Vec3f x = cross(up, z).normalize();
+    Vec3f y = cross(z, x).normalize();
+
+    Matrix minv = Matrix::identity();
+    Matrix tr = Matrix::identity();
+    for (int i = 0; i < 3; i++)
+    {
+        minv[0][i] = x[i];
+        minv[1][i] = y[i];
+        minv[2][i] = z[i];
+        tr[i][3] = -center[i];
+    }
+
+    ModelView = minv * tr;
+}
+
+void Renderer::projection(float k)
+{
+    Projection = Matrix::identity();
+    Projection[3][2] = 0;
+}
+
+void Renderer::viewport(int x, int y, int width, int height)
+{
+    Viewport = Matrix::identity();
+    Viewport[0][0] = width / 2.f;
+    Viewport[1][1] = height / 2.f;
+    Viewport[2][2] = depth / 2.f;
+    Viewport[0][3] = x + width / 2.f;
+    Viewport[1][3] = y + height / 2.f;
+    Viewport[2][3] = depth / 2.f;
 }
 
 // ********************

@@ -18,12 +18,18 @@ int main(int argc, char const *argv[])
     const int width = 800;
     const int height = 800;
     const int depth = 250;
-    Vec3f light = { 0, 0, -1 };
+    Vec3f light = { 0, 0, 5 };
+    Vec3f eye = { 0, 0, 2 };
+    Vec3f center = { 0, 0, 0 };
+    Vec3f up = { 0, 1, 0 };
 
     shared_ptr<ImageTarget> target(new ImageTarget(width, height, "output.tga"));
 
     Renderer renderer(static_pointer_cast<RenderTarget>(target));
-    renderer.render(light, depth, 2., model);
+    renderer.lookat(eye, center, up);
+    renderer.viewport(0, 0, width, height);
+    renderer.projection(-1.f / (eye - center).norm());
+    renderer.render(light, model);
 
     return 0;
 }
