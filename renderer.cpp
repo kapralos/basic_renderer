@@ -37,42 +37,18 @@ Renderer::Renderer(std::shared_ptr<RenderTarget> _renderTarget) : renderTarget(m
 
 void Renderer::render()
 {
-    // std::cerr << ModelView << std::endl;
-    //     std::cerr << Projection << std::endl;
-    //     std::cerr << Viewport << std::endl;
-    //     Matrix z = (Viewport*Projection*ModelView);
-    //     std::cerr << z << std::endl;
     shader->setModel(model);
     int numFaces = model->nfaces();
-    // Vec3f light_proj = proj<3>(Projection * ModelView * embed<4>(light, 0.f)).normalize();
 
     for (int i = numFaces-1; i >= 0; i--)
     {
-        vector<int> face = model->face(i);
-        // Vec3f world[3];
-        // Vec3i screen[3];
-        // Vec2i text[3];
         Matrix vertices;
         for (int j = 0; j < 3; j++)
         {
-            // Vec3f w = model.vert(face[j]);
-            // world[j] = proj<3>(Projection * ModelView * embed<4>(w));
-            // Vec3f s = proj<3>(Viewport * Projection * ModelView * embed<4>(w));
-            // screen[j] = { s[0], s[1], s[2] };
-            // text[j] = model.uv(i, j);
             vertices[j] = shader->vertex(i, j);
         }
 
         drawTriangleFilled(vertices);
-
-
-        // Vec3f n = cross(world[1] - world[0], world[2] - world[0]);
-        // Vec3f norm = n.normalize();
-        // float intensity = norm * light_proj;
-        // if (intensity > 0)
-        // {
-        //     drawTriangleFilled(screen[0], screen[1], screen[2], text[0], text[1], text[2], intensity, model);
-        // }
     }
 }
 
@@ -98,7 +74,7 @@ void Renderer::lookat(const Vec3f& eye, const Vec3f& center, const Vec3f& up)
 void Renderer::projection(float k)
 {
     Projection = Matrix::identity();
-    Projection[3][2] = 0;
+    Projection[3][2] = k;
 }
 
 void Renderer::viewport(int x, int y, int width, int height)
@@ -128,37 +104,33 @@ void Renderer::setShader(std::shared_ptr<Shader> _shader)
 void Renderer::drawTriangleFilled(const Matrix& vertices)
 {
     Vec4f t0 = vertices[0], t1 = vertices[1], t2 = vertices[2];
-    int minX = min( t0[0], min(t1[0], t2[0]) );
-    int maxX = max( t0[0], max(t1[0], t2[0]) );
-    int minY = min( t0[1], min(t1[1], t2[1]) );
-    int maxY = max( t0[1], max(t1[1], t2[1]) );
+    Vec4f s0 = t0/t0[3], s1 = t1/t1[3], s2 = t2/t2[3];
+    int minX = min( s0[0], min(s1[0], s2[0]) );
+    int maxX = max( s0[0], max(s1[0], s2[0]) );
+    int minY = min( s0[1], min(s1[1], s2[1]) );
+    int maxY = max( s0[1], max(s1[1], s2[1]) );
     int u = 0, v = 0;
+    Color color;
+    unsigned char zb = 0;
 
     for (int x = minX; x <= maxX; x++)
     {
         for (int y = minY; y <= maxY; y++)
         {
-            Vec3f bary = barycentric(proj<2>(t0), proj<2>(t1), proj<2>(t2), { x, y });
+            Vec3f bary = barycentric(proj<2>(s0), proj<2>(s1), proj<2>(s2), { x, y });
             Vec3f bary_clip = { bary[0] / t0[3], bary[1] / t1[3], bary[2] / t2[3] };
             bary_clip = bary_clip / (bary_clip[0] + bary_clip[1] + bary_clip[2]);
 
-            unsigned char zb = max( 0, min( 255, int(bary_clip * proj<3>(vertices.col(2))) ) );
+            zb = max( 0, min( 255, int(bary_clip * proj<3>(vertices.col(2))) ) );
             if (bary_clip[0] < 0 || bary_clip[1] < 0 || bary_clip[2] < 0 || zbuffer->get(x, y)[0] > zb) continue;
 
-            Color color;
+            
             bool discard = shader->fragment(bary_clip, color);
             if (!discard)
             {
                 renderTarget->set(x, y, color);
                 zbuffer->set(x, y, zb);
             }
-            
-
-            // u = bary[0] * uv0[0] + bary[1] * uv1[0] + bary[2] * uv2[0];
-            // v = bary[0] * uv0[1] + bary[1] * uv1[1] + bary[2] * uv2[1];
-            // Color color = model.diffuse({ u, v });
-            // renderTarget->set(x, y, Color(color[2] * intensity, color[1] * intensity, color[0] * intensity, 255));
-            // zbuffer.set(x, y, zb);
         }
     }
 }

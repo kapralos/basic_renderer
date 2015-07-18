@@ -50,7 +50,7 @@ int main(int argc, char const *argv[])
     const int height = 800;
     const int depth = 250;
     Vec3f light = { 1, 1, 1 };
-    Vec3f eye = { 1, 1, 3 };
+    Vec3f eye = { 0, 0, 3 };
     Vec3f center = { 0, 0, 0 };
     Vec3f up = { 0, 1, 0 };
 
