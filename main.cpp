@@ -3,42 +3,13 @@
 #include "model.h"
 #include <memory>
 #include "ImageTarget.h"
+#include "CustomShaders.h"
 
 using namespace std;
 
 const Color red = Color(255, 0, 0, 255);
 const Color white = Color(255, 255, 255, 255);
 const char* defaultModelFile = "obj/african_head.obj";
-
-
-class GouraudShader : public Shader
-{
-public:
-    virtual ~GouraudShader() {}
-
-    virtual Vec4f vertex(int faceIdx, int vertIdx)
-    {
-        varying_intensity[vertIdx] = std::max(0.f, model->normal(faceIdx, vertIdx) * uniform_light);
-        Vec4f gl_Vertex = embed<4>(model->vert(faceIdx, vertIdx));
-        return Viewport * Projection * ModelView * gl_Vertex;
-    }
-
-    virtual bool fragment(const Vec3f& bary, Color& color)
-    {
-        float intensity = bary * varying_intensity;
-        color = Color(255, 255, 255) * intensity;
-        return false;
-    }
-
-    void setLight(const Vec3f& light)
-    {
-        uniform_light = light.normalize();
-    }
-
-private:
-    Vec3f varying_intensity;
-    Vec3f uniform_light;
-};
 
 
 int main(int argc, char const *argv[])

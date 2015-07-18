@@ -19,11 +19,13 @@ public:
     virtual ~Shader() {}
     virtual Vec4f vertex(int faceIdx, int vertIdx) = 0;
     virtual bool fragment(const Vec3f& bary, Color& color) = 0;
+    virtual Matrix getTriangle() { return varying_triangle; }
 
     void setModel(std::shared_ptr<Model> _model) { model = _model; }
 
 protected:
     std::shared_ptr<Model> model;
+    Matrix varying_triangle;
 };
 
 

@@ -42,13 +42,12 @@ void Renderer::render()
 
     for (int i = numFaces-1; i >= 0; i--)
     {
-        Matrix vertices;
         for (int j = 0; j < 3; j++)
         {
-            vertices[j] = shader->vertex(i, j);
+            shader->vertex(i, j);
         }
 
-        drawTriangleFilled(vertices);
+        drawTriangleFilled(shader->getTriangle());
     }
 }
 
