@@ -8,26 +8,45 @@
 #include "model.h"
 #include <memory>
 
+extern Matrix ModelView;
+extern Matrix Viewport;
+extern Matrix Projection;
+
+
+class Shader
+{
+public:
+    virtual ~Shader() {}
+    virtual Vec4f vertex(int faceIdx, int vertIdx) = 0;
+    virtual bool fragment(const Vec3f& bary, Color& color) = 0;
+
+    void setModel(std::shared_ptr<Model> _model) { model = _model; }
+
+protected:
+    std::shared_ptr<Model> model;
+};
+
+
 class Renderer
 {
 public:
     Renderer(std::shared_ptr<RenderTarget> _renderTarget);
-    void render(const Vec3f& light, Model& _model);
+    void render();
+
     void lookat(const Vec3f& eye, const Vec3f& center, const Vec3f& up);
     void projection(float k);
     void viewport(int x, int y, int width, int height);
 
+    void setModel(std::shared_ptr<Model> _model);
+    void setShader(std::shared_ptr<Shader> _shader);
+
 private:
-    void drawTriangleFilled(const Vec3i& t0, const Vec3i& t1, const Vec3i& t2, 
-        const Vec2i& uv0, const Vec2i& uv1, const Vec2i& uv2, 
-        float intensity, Model& model);
+    void drawTriangleFilled(const Matrix& vertices);
 
     std::shared_ptr<RenderTarget> renderTarget;
-    ZBuffer zbuffer;
-
-    Matrix ModelView;
-    Matrix Viewport;
-    Matrix Projection;
+    std::shared_ptr<ZBuffer> zbuffer;
+    std::shared_ptr<Model> model;
+    std::shared_ptr<Shader> shader;
 };
 
 #endif
